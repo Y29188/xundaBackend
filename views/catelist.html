@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>分类后台管理系统</title>
+  <link rel="stylesheet" href="/assets/layui/css/layui.css">
+</head>
+
+<body>
+  <div class="layui-layout layui-layout-admin">
+    <!-- 导入公共页面 -->
+    {{ include "./common/header.html" }}
+
+    <!-- 导入公共页面 -->
+    {{ include "./common/side.html" }}
+
+
+    <div class="layui-body">
+      <!-- 内容主体区域 -->
+      <div style="padding: 15px;">
+        <button type="button" class="layui-btn btnBook" lay-event="add" id="addbtn" title="添加样式">
+          <i class="layui-icon">&#xe654;</i>
+        </button>
+      </div>
+      <div style="padding: 15px;">
+        <table class="layui-table" id="cate" lay-filter="cate">
+
+        </table>
+      </div>
+
+    </div>
+
+  </div>
+</body>
+
+
+<script src="/assets/layui/layui.js"></script>
+<script>
+  layui.use('table', function () {
+    var table = layui.table
+      , $ = layui.jquery
+      , layer = layui.layer
+
+    table.render({
+      elem: '#cate'
+      , url: '/cateData',
+      toolbar: '#cateTool'
+      , cols: [[
+        { field: 'cate_id', width: 350, align: 'center' , title: '序号', sort: true }
+        , { field: 'cate_name', width: 350, align: 'center' , edit: 'text', title: '分类名称' }
+        , { field: 'orderBy', width: 350, align: 'center' , edit: 'text', title: '排序', sort: true }
+        , {
+          fixed: "right", width: 350, align: 'center' , title: '操作', templet: (obj) => {
+            return `
+            <a class="layui-btn  layui-btn-xs" lay-event="edit">编辑</a>
+          <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+          `
+          }
+
+        }
+      ]]
+    });
+
+    //监听单元格编辑
+    table.on('edit(cate)', async function (obj) {
+      const { data } = obj;
+      const { code, message } = await $.post('/updCateData', data)
+      if (code === 0) {
+        layer.msg(message)
+      }
+    });
+
+    // 删除操作
+    // 监听行工具事件
+    table.on('tool(cate)', function (obj) {
+      const { event, data } = obj;
+      const { cate_id } = data;
+      // 询问框
+      if (event === 'del') {
+        layer.confirm('确认删除吗', {
+          btn: ['是的', '取消'] //按钮
+        }, async function () {
+          const { code } = await $.post('/delCateData', { cate_id })
+          if (code === 0) {
+            layer.msg('删除成功', { icon: 1 });
+            // 刷新（重载）表格数据
+            // location.reload();
+            table.reload('cate')
+          }
+
+        }, function () {
+
+        });
+      }
+    });
+
+    // 添加
+    $("#addbtn").click(function () {
+      layer.prompt({ title: '请输入分类名称', formType: 0 }, function (cate_name, index) {
+        layer.close(index);
+        layer.prompt({ title: '请输入排序', formType: 0 }, function (orderBy, index) {
+          layer.close(index);
+          $.ajax({
+            type: "post",
+            url: `/addCateData`,
+            data: {
+              cate_name: cate_name,
+              orderBy: orderBy
+            }
+          })
+          layer.msg('添加成功', { icon: 1 });
+          setTimeout(function () {
+            window.location.reload()
+          }, 1000)
+        });
+      });
+    })
+
+  });
+</script>
+
+</html>

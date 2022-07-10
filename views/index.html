@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>小眠后台管理系统</title>
+  <link rel="stylesheet" href="/assets/layui/css/layui.css">
+</head>
+
+<body>
+  <div class="layui-layout layui-layout-admin">
+    <!-- 导入公共页面 -->
+    {{ include "./common/header.html" }}
+
+    <!-- 导入公共页面 -->
+    {{ include "./common/side.html" }}
+
+
+
+    <div class="layui-body">
+      <!-- 内容主体区域 -->
+      <div style="padding: 15px;">
+        <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+        <div id="main" style="width: 800px;height:400px;"></div>
+      </div>
+    </div>
+
+    <div class="layui-footer">
+      <!-- 底部固定区域 -->
+      底部固定区域
+    </div>
+
+  </div>
+</body>
+<script src="https://cdn.bootcdn.net/ajax/libs/js-cookie/3.0.1/js.cookie.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.js"></script>
+<script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script>
+<script>
+
+  // 加载图表
+  function loadGraphy(cates, totals) {
+    // 基于准备好的dom，初始化echarts实例
+    var myChart = echarts.init(document.getElementById('main'));
+
+    // 指定图表的配置项和数据
+    var option = {
+      title: {
+        text: '分类文章统计',
+        left: 'center'
+      },
+      xAxis: {
+        type: 'category',
+        data: cates
+      },
+      yAxis: {
+        type: 'value'
+      },
+      series: [
+        {
+          data: totals,
+          type: 'line',
+          smooth: true
+        }
+      ]
+    };
+
+
+
+
+
+    // 使用刚指定的配置项和数据显示图表。
+    myChart.setOption(option);
+  }
+
+  $.get('/cateCount').then(res => {
+    // 组装两个一维数组
+    let cates = [];
+    let totals = [];
+    res.forEach(item => {
+      cates.push(item.cate_name)
+      totals.push(item.total)
+    })
+    loadGraphy(cates, totals);
+  })
+
+
+</script>
+
+</body>
+
+</html>

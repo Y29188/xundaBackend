@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>小眠后台管理系统</title>
+    <link rel="stylesheet" href="/assets/layui/css/layui.css">
+</head>
+
+<body>
+    <div class="layui-layout layui-layout-admin">
+        <!-- 导入公共页面 -->
+        {{ include "./common/header.html" }}
+        <!-- 分离侧边导航栏 -->
+        {{include "./common/side.html" }}
+
+        <div class="layui-body">
+            <!-- 内容主体区域 -->
+            <div style="padding: 15px;">
+                <h1 style="text-align: center;">系 统 设 置</h1>
+                <form class="layui-form" id="myform" lay-filter="editform">
+                    <div style="margin: 75px auto;width: 555px;">
+                        <div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">博客名：</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="logoText" id="title" lay-verify="title" autocomplete="off"
+                                        class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">上传logo：</label>
+                                <div class="layui-input-block">
+                                    <div class="layui-upload" style="position: relative;">
+                                        <input type="file" name="blogLogo" style="display:none;"
+                                            onchange="uploads(this)">
+                                        <div class="layui-upload-list drag-disabled" style="display:inline-block;">
+                                            <img class="layui-upload-img" id="blogLogo" src=""
+                                                style="display: block;width:80px;height:80px;border-radius:50px;"
+                                                draggable="false">
+                                        </div>
+                                        <button type="button" class="layui-btn" id="test1"
+                                            style="position: absolute;right: 100px;top: 10px;">上传头像</button>
+                                        <span
+                                            style="position: absolute;font-size: 12px;top: 60px;right: 0;">支持JPG、PNG、GIF格式，小于2MB</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="layui-form-item" style="position: relative;">
+                                <div class="layui-input-block">
+                                    <button type="submit" class="layui-btn" lay-submit="" lay-filter="blogInfo"
+                                        style="position: absolute;right: 0;top: 65px;" id="blogInfo">立即提交</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+  </script>
+    <script>
+
+
+        let settingPic = true;
+        function uploads(ele) {
+            settingPic = ele.files[0];
+            if (settingPic) {
+                let filereader = new FileReader();
+                filereader.readAsDataURL(settingPic);
+                let fileName = settingPic.name;
+                let fileExt = fileName.lastIndexOf('.');
+                let fileSuffix = fileName.substring(fileExt + 1, fileName.length);
+                // 单位换算： 1GB = 1024MB , 1MB = 1024KB  1kb = 1024byte
+                let fileSize = Math.ceil(settingPic.size / 1024 / 1024);
+                filereader.onload = function () {
+                    if (fileSize < 2 && (fileSuffix === 'jpg' || fileSuffix === 'png' || fileSuffix === 'gif')) {
+                        $("#blogLogo").attr('src', this.result)
+                        settingPic = true;
+                    } else {
+                        layer.msg('请上传正确格式的图片，不大于2MB的图片。', { icon: 2 })
+                        settingPic = false;
+                    }
+                }
+            }
+        }
+
+        let oldPic;
+        layui.use('form', async function () {
+            var form = layer.form;
+            let { data } = await $.get('/systemData')
+            data = data.map(item => {
+                return item.val
+            });
+            $("#title").val(data[0])
+            $("#blogLogo").attr('src', data[1])
+            oldPic = data[1];
+
+            // form.on('submit(blogInfo)', function (data) {
+
+            $("#blogInfo").click(function () {
+                let myForm = $('#myform')[0];
+                let formData = new FormData(myForm);
+
+                formData.set('oldPic', oldPic)
+                // 有上传图片则删除原图  反之保留原图
+                if (settingPic) {
+                    $.ajax({
+                        type: "post",
+                        url: `/updsystemData`,
+                        data: formData,
+                        processData: false,
+                        contentType: false
+                    }).then(res => {
+                        let { err, msg } = res;
+                        err == '20000' ? (layer.msg(msg, { icon: 1 }), location.reload()) : layer.msg(msg, { icon: 2 })
+                    })
+                } else {
+                    layer.msg('请更换正确格式的图片。')
+                }
+            })
+
+
+
+            //     return false; // 这句话阻止默认行为 会包装成一个Promise.resove(false)进行返回
+            // });
+
+            // 点击上传文件自行点击上传文件
+            $(document).on('click', '#test1', function () {
+                $("input[name=blogLogo]").eq(0).click()
+            })
+
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,279 @@
+<style>
+  .logo {
+    width: 30px;
+    height: 30px;
+    border-radius: 50px;
+  }
+</style>
+<div class="layui-header">
+  <div class="layui-logo layui-hide-xs layui-bg-black">
+    <div class="layui-logo layui-hide-xs layui-bg-black">
+      <img src="" alt="" id="logo" class="logo">
+      <span id="logoText">小眠博客管理系统</span>
+    </div>
+  </div>
+
+  <ul class="layui-nav layui-layout-right">
+    <li class="layui-nav-item layui-hide layui-show-md-inline-block">
+      <a href="javascript:;">
+        <img id="avatar" src="" class="layui-nav-img">
+        <span id="username">请登录</span>
+      </a>
+      <dl class="layui-nav-child">
+        <dd><a href="javascript:;" id="showUserInfo">个人信息</a></dd>
+        <dd><a href="javascript:;" id="changePassword">修改密码</a></dd>
+        <dd><a href="javascript:;" id="logout">退出</a></dd>
+      </dl>
+    </li>
+    <li class="layui-nav-item" lay-header-event="menuRight" lay-unselect>
+      <a href="javascript:;">
+        <i class="layui-icon layui-icon-more-vertical"></i>
+      </a>
+    </li>
+  </ul>
+</div>
+<script src="/assets/layui/layui.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/js-cookie/3.0.1/js.cookie.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.js"></script>
+<script src="/assets/js/System_style.js"></script>
+<script>
+  // 获取cookie设置到header页面中，显示用户的信息
+  let {
+    username,
+    intro,
+    avatar,
+    id
+  } = JSON.parse(Cookies.get('userInfo'));
+  // 回显图片
+  $('#avatar').attr('src', avatar)
+  $("#username").text(username)
+
+  let logoText = localStorage.getItem('logoText')
+  $("#logoText").text(logoText)
+
+
+  // 修改用户登录密码
+  $('#changePassword').on('click', () => {
+    let passReg = /^.{8,}$/;
+    let signReg = /\.|\*|\@/;
+    layer.open({
+      type: 0,
+      title: ['修改密码', 'font-size:15px'],
+      area: ['450px', '250px'],
+      closeBtn: 2,
+      content: `
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">旧密码</label>
+                    <div class="layui-input-block">
+                       <input type="password" name="oldpassword" placeholder="请输入旧密码" autocomplete="off" class="layui-input">
+                    </div>
+                  </div>
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">新密码</label>
+                    <div class="layui-input-block">
+                       <input type="password" name="newpassword" placeholder="请输入新密码" autocomplete="off" class="layui-input">
+                    </div>
+                  </div>
+          `,
+      btn: ['确认提交', '取消'], btn1: async function (index, layero) {
+        const ipt1 = $("input[name=oldpassword]").eq(0).val()
+        const ipt2 = $("input[name=newpassword]").eq(0).val()
+        if (ipt1 == '') {
+          layer.msg('请输入旧密码', { icon: 2 })
+        } else if (ipt2 == '') {
+          layer.msg("请输入新密码", { icon: 2 })
+        } else if (!passReg.test(ipt2) || !signReg.test(ipt2)) {
+          layer.msg('密码最少8位，需包含".或*或@"。', { icon: 2 })
+        } else {
+          let { err, msg } = await $.ajax({
+            type: 'post',
+            url: '/newPassword',
+            data: {
+              id,
+              'oldpassword': ipt1,
+              'newpassword': ipt2
+            }
+          })
+          if (err == '20005') {
+            layer.msg(msg, { icon: 2 })
+          } else if (err == '20006') {
+            layer.msg(msg, { icon: 2 })
+          } else {
+            layer.msg(msg, { icon: 1 }), layer.close(index)
+          }
+        }
+      }, btn2: function (index, layero) {
+        layer.close(index)
+      }
+    })
+  })
+
+
+  // 退出
+  $("#logout").on('click', async (event) => {
+    const {
+      message,
+      code
+    } = await $.post('/userLogout')
+    if (code === 0) {
+      location.href = '/login'
+    } else {
+      alert('退出失败')
+    }
+  })
+
+
+  // 查看个人信息
+  $("#showUserInfo").on('click', () => {
+    // 获取cookie中的用户信息
+    const {
+      id,
+      username,
+      avatar,
+      intro
+    } = JSON.parse(Cookies.get('userInfo'))
+
+    // 弹窗模板
+    let userTemplate = `
+        <div>
+          <div class="layui-form-item">
+            <label class="layui-form-label">用户名</label>
+            <div class="layui-input-block">
+              <input type="text" name="username" disabled value='${username}' lay-verify="title" autocomplete="off"  class="layui-input">
+            </div>
+          </div>
+          <div class="layui-form-item">
+            <label class="layui-form-label">你的照骗</label>
+            <div class="layui-input-block">
+              <div class="layui-upload">
+                <button type="button" class="layui-btn" id="test1">上传图片</button>
+                <div class="layui-upload-list">
+                  <img class="layui-upload-img" style="width:80px" id="demo1">
+                  <p id="demoText"></p>
+                </div>
+                <div style="width: 95px;">
+                  <div class="layui-progress layui-progress-big" lay-showpercent="yes" lay-filter="demo">
+                    <div class="layui-progress-bar" lay-percent=""></div>
+                  </div>
+                </div>
+              </div> 
+            </div>
+          </div>
+          <div class="layui-form-item">
+            <label class="layui-form-label">个人介绍</label>
+            <div class="layui-input-inline">
+              <textarea name="intro"   class="layui-textarea" id="" cols="30" rows="6">${intro}</textarea>
+            </div>
+          </div>
+          <div style="text-align:center;">
+            <button type="button" id="saveUser" class="layui-btn layui-btn-primary layui-border-blue layui-btn-fluid">保存</button>
+          </div>
+        </div>
+      `;
+    // 页面层
+    layer.open({
+      title: "修改个人信息",
+      type: 1,
+      skin: 'layui-layer-rim', // 加上边框
+      area: ['420px', '540px'], // 宽高
+      content: userTemplate,
+      success: function (layero, index) {
+        // 初始化上传
+        initUpload();
+        // 回显图片
+        let {
+          avatar
+        } = JSON.parse(Cookies.get('userInfo'));
+        $("#demo1").attr('src', avatar)
+      }
+    });
+  })
+
+
+  // 上传文件
+  function initUpload() {
+    // 常规使用 - 普通图片上传
+    const upload = layui.upload;
+    const element = layui.element;
+    var uploadInst = upload.render({
+      elem: '#test1',
+      url: '/avatar'  // 此处用的是第三方的 http 请求演示，实际使用时改成您自己的上传接口即可。
+      ,
+      before: function (obj) {
+        // 预读本地文件示例，不支持ie8
+        obj.preview(function (index, file, result) {
+          $('#demo1').attr('src', result);  // 图片链接（base64）
+        });
+
+        element.progress('demo', '0%');  // 进度条复位
+        layer.msg('上传中', {
+          icon: 16,
+          time: 0
+        });
+      },
+      done: function (res) {
+        // 如果上传失败
+        if (res.code === 0) {
+          let {
+            avatar
+          } = JSON.parse(Cookies.get('userInfo'));
+          // 回显图片
+          $('#avatar').attr('src', avatar)
+          return layer.msg('上传成功');
+
+        } else {
+          return layer.msg('上传失败');
+        }
+        // 上传成功的一些操作
+        $('#demoText').html(''); // 置空上传失败的状态
+      },
+      error: function () {
+        // 演示失败状态，并实现重传
+        var demoText = $('#demoText');
+        demoText.html(
+          '<span style="color: #FF5722;">上传失败</span> <a class="layui-btn layui-btn-xs demo-reload">重试</a>');
+        demoText.find('.demo-reload').on('click', function () {
+          uploadInst.upload();
+        });
+      },
+      // 进度条 
+      progress: function (n, elem, e) {
+        element.progress('demo', n + '%'); // 可配合 layui 进度条元素使用
+        if (n == 100) {
+          layer.msg('上传完毕', {
+            icon: 1
+          });
+        }
+      }
+    });
+  }
+
+
+  // 保存用户信息
+  $(document).on('click', "#saveUser", async () => {
+    const {
+      id
+    } = JSON.parse(Cookies.get('userInfo'))
+    const intro = $("textarea[name='intro']").val()
+    const {
+      code,
+      message
+    } = await $.post('/updUserInfo', {
+      id,
+      intro
+    })
+    if (code === 0) {
+      layer.msg(message, {
+        icon: 1
+      })
+    } else {
+      layer.msg(message, {
+        icon: 2
+      })
+    }
+
+  })
+
+
+
+</script>

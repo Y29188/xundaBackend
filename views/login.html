@@ -1,0 +1,53 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="stylesheet" href="/assets/css/login.css">
+    
+<body>
+    <div class="agileheader">
+        <h1></h1>
+    </div>
+    <div class="main-w3l">
+        <div class="w3layouts-main">
+            <h2>小眠博客登录页面</h2>
+            <form method="post" id="loginForm">
+                <input name="username" type="email" autocomplete="off"  placeholder="请输入用户名" />
+                <input name="password" type="password" autocomplete="off" placeholder="请输入密码" />
+                <div class="clear"></div>
+                <input type="submit" id="loginBtn" value="登 录">
+            </form>
+        </div>
+    </div>
+</body>
+<script src="/assets/js/jquery.min.js"></script>
+<script src="/assets/layui/layui.js"></script>
+<script>
+    // 用户登录
+    $("#loginBtn").on('click', () => {
+        // 获取表单项数据
+        const data = $('#loginForm').serialize()
+        console.log(data)
+        $.post('/userLogin', data).then(res => {
+            const { code, message } = res;
+            if (code === 0) {
+                location.href = '/'
+            } else {
+                layer.msg(message)
+            }
+        })
+        return false;
+    })
+
+
+    
+</script>
+
+</html>
+
+
+
